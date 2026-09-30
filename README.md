@@ -17,7 +17,8 @@ npm run dev
 - **修改文字**：编辑 `src/main.jsx` 顶部的 `profile`，以及 `Home`、`Work`、`Life`、`Contact` 组件中的文字。
 - **替换照片**：在 `Home` 组件中找到 `.portrait-image`，将它替换成 `<img src="/your-photo.jpg" alt="我的照片" />`，并把图片放入 `public/` 文件夹。
 - **新增社交链接**：在 `Contact` 或 `Layout` 组件里修改对应的 `href`。
+- **联系表单**：当前已接入 Formspree 表单 `xyezvnag`。表单提交后会进入 Formspree，并转发到你在 Formspree 中设置的收件邮箱。
 
 ## 注意
 
-目前联系表单是展示用表单，不会真正发送邮件。接入真实邮箱服务后即可使用。
+联系表单已经可以真实发送邮件。Formspree 的收件邮箱、自动回复、垃圾邮件保护和表单设置，请在 Formspree 控制台管理。
