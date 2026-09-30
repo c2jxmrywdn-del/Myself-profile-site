@@ -6,18 +6,18 @@ import { ArrowUpRight, BriefcaseBusiness, Camera, Check, Coffee, Heart, MapPin, 
 import './styles.css';
 
 const profile = {
-  name: 'Alex Chen',
-  role: '产品设计师 · 生活观察者',
+  name: 'Ouyang Jason',
+  role: '在读大学生 · 生活观察者',
   location: '上海 / 远程',
-  intro: '把复杂的事情讲清楚，也把平凡的日子过得有趣。',
-  bio: '我是一名专注于数字产品体验的设计师，喜欢和聪明、善良、有好奇心的人一起做事。工作之外，我会拍照、逛展、研究咖啡，也乐于认识新的朋友。',
+  intro: '2006 年 10 月出生，目前在读大学，也在认真认识这个世界。',
+  bio: '我叫 Ouyang Jason，2006 年 10 月出生，目前还是一名大学生。喜欢和聪明、善良、有好奇心的人一起聊天，也在学习把平凡的日子过得有趣。',
 };
 
 function Layout({ children }) {
   const [open, setOpen] = React.useState(false);
   return <div className="site-shell">
     <header className="topbar">
-      <Link className="brand" to="/" onClick={() => setOpen(false)}><span className="brand-mark">A</span><span>Alex's space</span></Link>
+      <Link className="brand" to="/" onClick={() => setOpen(false)}><span className="brand-mark">O</span><span>Ouyang's space</span></Link>
       <button className="menu-toggle" onClick={() => setOpen(!open)} aria-label="打开导航">{open ? <X size={20}/> : <Menu size={20}/>}</button>
       <nav className={open ? 'nav open' : 'nav'}>
         <NavLink to="/" end onClick={() => setOpen(false)}>首页</NavLink>
@@ -28,7 +28,7 @@ function Layout({ children }) {
       <Link className="nav-cta" to="/contact">认识一下 <ArrowUpRight size={16}/></Link>
     </header>
     <main>{children}</main>
-    <footer className="footer"><span>© 2025 Alex Chen</span><span>做一个有趣且靠谱的人。</span><span className="footer-social"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="GitHub">GH</a><a href="#" aria-label="LinkedIn">in</a></span></footer>
+    <footer className="footer"><span>© 2025 Ouyang Jason</span><span>做一个有趣且靠谱的人。</span><span className="footer-social"><a href="#" aria-label="Instagram">IG</a><a href="#" aria-label="GitHub">GH</a><a href="#" aria-label="LinkedIn">in</a></span></footer>
   </div>
 }
 
@@ -38,7 +38,7 @@ function PageIntro({ eyebrow, title, text }) { return <section className="page-i
 function Home() {
   return <>
     <section className="hero page-wrap">
-      <div className="hero-copy"><Tag color="coral">OPEN TO GOOD CONVERSATIONS</Tag><h1>你好，我是<br/><span>Alex <i>👋</i></span></h1><p className="hero-lede">{profile.intro}</p><div className="hero-actions"><Link className="button primary" to="/contact">和我聊聊 <ArrowUpRight size={18}/></Link><Link className="text-link" to="/work">看看我的工作 <span>→</span></Link></div><div className="mini-note"><span className="avatar-dot">A</span><span>目前在上海，偶尔去远方<br/><strong>也欢迎你来打个招呼</strong></span></div></div>
+      <div className="hero-copy"><Tag color="coral">OPEN TO GOOD CONVERSATIONS</Tag><h1>你好，我是<br/><span>Ouyang <i>👋</i></span></h1><p className="hero-lede">{profile.intro}</p><div className="hero-actions"><Link className="button primary" to="/contact">和我聊聊 <ArrowUpRight size={18}/></Link><Link className="text-link" to="/work">看看我的工作 <span>→</span></Link></div><div className="mini-note"><span className="avatar-dot">O</span><span>2006 年 10 月出生 · 目前在读大学<br/><strong>也欢迎你来打个招呼</strong></span></div></div>
       <div className="hero-visual"><div className="sticker sticker-one">DESIGN<br/>WITH<br/>HEART</div><div className="portrait-card"><div className="portrait-image"><span>放一张<br/>你的照片</span></div><div className="portrait-caption"><span>today's mood</span><strong>curious & sunny</strong><span className="sun">☀</span></div></div><div className="scribble">✦</div><div className="circle-text">GOOD<br/>VIBES<br/>ONLY</div></div>
     </section>
     <section className="home-strip page-wrap"><div><span className="eyebrow">A LITTLE ABOUT ME</span><h2>认真工作，<br/><span>好好生活。</span></h2></div><div className="about-copy"><p>{profile.bio}</p><div className="stat-row"><div><strong>8+</strong><span>年设计经验</span></div><div><strong>24</strong><span>完成的项目</span></div><div><strong>∞</strong><span>好奇心</span></div></div><Link className="text-link" to="/life">更多关于我的生活 <span>→</span></Link></div></section>
