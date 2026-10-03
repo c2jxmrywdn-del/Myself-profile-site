@@ -1,0 +1,8 @@
+{
+  "routes": [
+    { "path": "/", "title": "首页" },
+    { "path": "/work", "title": "工作经历" },
+    { "path": "/life", "title": "个人生活" },
+    { "path": "/contact", "title": "联系我" }
+  ]
+}
