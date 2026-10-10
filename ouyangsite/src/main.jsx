@@ -53,6 +53,16 @@ const copy = {
   },
 };
 
+
+const heroContent = {
+  zh: {
+    promo: '个人简历 · 认识 Ouyang Jason', kicker: 'PERSONAL RESUME / 2026', titleA: '把好奇心，变成', titleB: '更大的', titleAccent: '世界。', status: '开放交流中', introLead: '你好，我是', introTail: '一名正在成长中的大学生。', body: '我在学习、旅行，也在把每一次经历整理成自己的方向。我的关键词是', primary: '查看我的经历', secondary: '联系我', metaOne: '2006.10 / 在读大学生', metaTwo: '旅行 / 好奇 / 真诚', scroll: '向下探索', snapshotEyebrow: 'A QUICK RESUME SNAPSHOT', snapshotTitle: '不只是一个标题，\n也是一个正在发生的人。', snapshotText: '我叫 Ouyang Jason，2006 年 10 月出生，目前在读大学。喜欢旅行，也喜欢和聪明、善良、有好奇心的人聊天。', currentLabel: '现在', currentValue: '大学在读', currentNote: '持续学习与积累', interestLabel: '兴趣', interestValue: '旅行观察', interestNote: '去看看更大的世界', nextLabel: '下一步', nextValue: '保持开放', nextNote: '认识新的朋友与机会', keywords: ['认真学习', '观察生活', '慢慢出发', '持续成长']
+  },
+  en: {
+    promo: 'Personal resume · Meet Ouyang Jason', kicker: 'PERSONAL RESUME / 2026', titleA: 'Turn curiosity into', titleB: 'a wider', titleAccent: 'world.', status: 'Open to good conversations', introLead: 'Hi, I’m', introTail: 'a college student in progress.', body: 'I’m learning, traveling and turning each experience into a direction. My keywords are', primary: 'View my experience', secondary: 'Contact me', metaOne: '2006.10 / COLLEGE STUDENT', metaTwo: 'TRAVEL / CURIOUS / SINCERE', scroll: 'SCROLL TO EXPLORE', snapshotEyebrow: 'A QUICK RESUME SNAPSHOT', snapshotTitle: 'More than a headline,\nI’m a person in progress.', snapshotText: 'I’m Ouyang Jason, born in October 2006 and currently in college. I love traveling and talking with thoughtful, kind, curious people.', currentLabel: 'NOW', currentValue: 'In college', currentNote: 'Learning and building', interestLabel: 'INTEREST', interestValue: 'Travel & observe', interestNote: 'Go see the wider world', nextLabel: 'NEXT', nextValue: 'Stay open', nextNote: 'Meet new people and possibilities', keywords: ['learning seriously', 'observing life', 'going further', 'growing slowly']
+  }
+};
+
 const socials = [
   { label: '𝕏 · X', href: 'https://x.com/Orion_Yves_Jude' },
   { label: 'f · Facebook', href: 'https://www.facebook.com/profile.php?id=61590596057471' },
@@ -75,16 +85,222 @@ function Layout({ children, lang, setLang }) {
       <div className="top-actions"><button className="language-toggle" onClick={() => setLang(lang === 'zh' ? 'en' : 'zh')} aria-label="Switch language">{lang === 'zh' ? 'EN' : '中'}</button><Link className="nav-cta" to="/contact">{t.meet} <ArrowUpRight size={16} /></Link></div>
     </header>
     <main>{children}</main>
-    <footer className="footer"><span>© 2025 Ouyang Jason</span><span>{t.footer}</span><span className="footer-social">{socials.map((item) => <a key={item.label} href={item.href} target="_blank" rel="noreferrer">{item.label.split('·')[0].trim()}</a>)}</span></footer>
+    <footer className="footer"><span>© 2026 Ouyang Jason</span><span>{t.footer}</span><span className="footer-social">{socials.map((item) => <a key={item.label} href={item.href} target="_blank" rel="noreferrer">{item.label.split('·')[0].trim()}</a>)}</span></footer>
   </div>;
 }
 
 function Tag({ children, color = 'yellow' }) { return <span className={`tag ${color}`}>{children}</span>; }
 function PageIntro({ eyebrow, title, text }) { return <section className="page-intro"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{text}</p></section>; }
 
+function Typewriter({ words }) {
+  const [wordIndex, setWordIndex] = React.useState(0);
+  const [text, setText] = React.useState('');
+  const [deleting, setDeleting] = React.useState(false);
+  React.useEffect(() => {
+    const word = words[wordIndex % words.length];
+    const delay = deleting ? 48 : text === word ? 1350 : 88;
+    const timer = window.setTimeout(() => {
+      if (!deleting) {
+        const next = word.slice(0, text.length + 1);
+        setText(next);
+        if (next === word) setDeleting(true);
+      } else {
+        const next = word.slice(0, Math.max(0, text.length - 1));
+        setText(next);
+        if (next === '') {
+          setDeleting(false);
+          setWordIndex((current) => (current + 1) % words.length);
+        }
+      }
+    }, delay);
+    return () => window.clearTimeout(timer);
+  }, [deleting, text, wordIndex, words]);
+  return <span className="typewriter">{text}<span className="typewriter-caret" aria-hidden="true">|</span></span>;
+}
+
+function ParticleField() {
+  const canvasRef = React.useRef(null);
+  React.useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    const ctx = canvas.getContext('2d');
+    const particles = [];
+    const ribbon = [];
+    const ambient = 26;
+    let width = 0;
+    let height = 0;
+    let frame = 0;
+    let previous = null;
+    let lastComet = 0;
+    let lastDraw = 0;
+    const frameInterval = 1000 / 32;
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.25);
+      width = rect.width;
+      height = rect.height;
+      canvas.width = Math.floor(width * ratio);
+      canvas.height = Math.floor(height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+    };
+    const seed = () => {
+      particles.length = 0;
+      for (let i = 0; i < ambient; i += 1) {
+        particles.push({ x: Math.random() * width, y: Math.random() * height, vx: (Math.random() - .5) * .1, vy: (Math.random() - .5) * .1, life: 1, decay: .0015, size: 1 + Math.random() * 1.8, hue: 195 + Math.random() * 90, ambient: true });
+      }
+    };
+    const frameRect = () => {
+      const frame = document.querySelector('.hero-frame');
+      if (!frame) return null;
+      const canvasRect = canvas.getBoundingClientRect();
+      const rect = frame.getBoundingClientRect();
+      return { left: rect.left - canvasRect.left, top: rect.top - canvasRect.top, right: rect.right - canvasRect.left, bottom: rect.bottom - canvasRect.top };
+    };
+    const insideFrame = (point, rect) => rect && point.x > rect.left && point.x < rect.right && point.y > rect.top && point.y < rect.bottom;
+    const addSpark = (x, y, dx, dy, trailLength = 18) => {
+      particles.push({ x: x + (Math.random() - .5) * 5, y: y + (Math.random() - .5) * 5, vx: dx * .035 + (Math.random() - .5) * .45, vy: dy * .035 + (Math.random() - .5) * .45, life: 1, decay: .022 + Math.random() * .012, size: 1.1 + Math.random() * 2.2, hue: Math.random() > .42 ? 330 + Math.random() * 35 : 195 + Math.random() * 70, trailLength, ambient: false });
+      if (particles.length > 180) particles.splice(0, particles.length - 180);
+    };
+    const addRibbonPoint = (point, dx, dy) => {
+      const last = ribbon[ribbon.length - 1];
+      const distance = last ? Math.hypot(point.x - last.x, point.y - last.y) : 0;
+      const steps = Math.min(8, Math.max(1, Math.ceil(distance / 8)));
+      for (let i = 1; i <= steps; i += 1) {
+        const ratio = i / steps;
+        ribbon.push({ x: (last ? last.x : point.x) + (point.x - (last ? last.x : point.x)) * ratio, y: (last ? last.y : point.y) + (point.y - (last ? last.y : point.y)) * ratio, vx: dx, vy: dy, time: performance.now() });
+      }
+      if (ribbon.length > 78) ribbon.splice(0, ribbon.length - 78);
+    };
+    const move = (event) => {
+      const rect = canvas.getBoundingClientRect();
+      const point = { x: event.clientX - rect.left, y: event.clientY - rect.top };
+      if (point.x < 0 || point.y < 0 || point.x > rect.width || point.y > rect.height) { previous = null; return; }
+      const dx = previous ? point.x - previous.x : 0;
+      const dy = previous ? point.y - previous.y : 0;
+      if (previous) {
+        const distance = Math.hypot(dx, dy);
+        const count = Math.min(4, Math.max(1, Math.ceil(distance / 18)));
+        for (let i = 0; i < count; i += 1) addSpark(point.x, point.y, dx, dy, 20 + Math.min(distance, 100) * .5);
+      }
+      if (insideFrame(point, frameRect())) addRibbonPoint(point, dx, dy);
+      previous = point;
+    };
+    const emitFrameComet = (now) => {
+      if (now - lastComet < 560) return;
+      const rect = frameRect();
+      if (!rect) return;
+      const side = Math.random() > .5 ? 'left' : 'right';
+      const x = side === 'left' ? rect.left + 5 : rect.right - 5;
+      const y = rect.top + 30 + Math.random() * Math.max(20, rect.bottom - rect.top - 60);
+      const direction = side === 'left' ? 1 : -1;
+      particles.push({ x, y, vx: direction * (.4 + Math.random() * .3), vy: (Math.random() - .5) * .16, life: 1, decay: .007, size: 1.2 + Math.random() * 1.4, hue: Math.random() > .5 ? 340 : 205, trailLength: 52 + Math.random() * 28, ambient: false, comet: true });
+      lastComet = now;
+    };
+    const drawRibbon = (now) => {
+      while (ribbon.length && now - ribbon[0].time > 1250) ribbon.shift();
+      if (ribbon.length < 2) return;
+      const strands = 6;
+      let speedTotal = 0;
+      for (const point of ribbon) speedTotal += Math.hypot(point.vx, point.vy);
+      const averageSpeed = speedTotal / ribbon.length;
+      ctx.globalCompositeOperation = 'lighter';
+      for (let pass = 0; pass < 2; pass += 1) {
+        ctx.filter = pass === 0 ? 'blur(3px)' : 'none';
+        for (let strand = 0; strand < strands; strand += 1) {
+          const center = (strands - 1) / 2;
+          ctx.beginPath();
+          for (let i = 0; i < ribbon.length; i += 1) {
+            const point = ribbon[i];
+            const speed = Math.max(1, Math.hypot(point.vx, point.vy));
+            const normalX = -point.vy / speed;
+            const normalY = point.vx / speed;
+            const spread = (strand - center) * (1.7 + Math.min(speed * .035, 2));
+            const x = point.x + normalX * spread;
+            const y = point.y + normalY * spread;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+          }
+          const hue = 316 + strand * 8;
+          ctx.strokeStyle = `hsla(${hue}, 100%, ${pass === 0 ? 64 : 58}%, ${pass === 0 ? .16 : .72})`;
+          ctx.lineWidth = (pass === 0 ? 4.5 : 1.1) + Math.min(averageSpeed * .06, 2.2);
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.stroke();
+        }
+      }
+      ctx.filter = 'none';
+    };
+    const draw = (now = 0) => {
+      if (now - lastDraw < frameInterval) {
+        frame = window.requestAnimationFrame(draw);
+        return;
+      }
+      lastDraw = now;
+      ctx.clearRect(0, 0, width, height);
+      emitFrameComet(now);
+      drawRibbon(now);
+      ctx.globalCompositeOperation = 'lighter';
+      for (let i = particles.length - 1; i >= 0; i -= 1) {
+        const particle = particles[i];
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.life -= particle.decay;
+        if (particle.life <= 0) { particles.splice(i, 1); continue; }
+        const alpha = particle.ambient ? particle.life * .2 : particle.life * .65;
+        if (particle.trailLength) {
+          const speed = Math.max(.25, Math.hypot(particle.vx, particle.vy));
+          const tailX = particle.x - (particle.vx / speed) * particle.trailLength;
+          const tailY = particle.y - (particle.vy / speed) * particle.trailLength;
+          const trail = ctx.createLinearGradient(tailX, tailY, particle.x, particle.y);
+          trail.addColorStop(0, `hsla(${particle.hue}, 100%, 65%, 0)`);
+          trail.addColorStop(.75, `hsla(${particle.hue}, 100%, 65%, ${alpha * .3})`);
+          trail.addColorStop(1, `hsla(${particle.hue}, 100%, 65%, ${alpha})`);
+          ctx.beginPath();
+          ctx.strokeStyle = trail;
+          ctx.lineWidth = particle.comet ? particle.size * 1.4 : particle.size;
+          ctx.moveTo(tailX, tailY);
+          ctx.lineTo(particle.x, particle.y);
+          ctx.stroke();
+        }
+        ctx.beginPath();
+        ctx.fillStyle = `hsla(${particle.hue}, 100%, 70%, ${alpha})`;
+        ctx.shadowBlur = particle.ambient ? 8 : 15;
+        ctx.shadowColor = `hsla(${particle.hue}, 100%, 65%, ${alpha})`;
+        ctx.arc(particle.x, particle.y, particle.size * (particle.ambient ? 1 : particle.life), 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.shadowBlur = 0;
+      frame = window.requestAnimationFrame(draw);
+    };
+    resize();
+    seed();
+    draw();
+    window.addEventListener('resize', resize);
+    window.addEventListener('pointermove', move, { passive: true });
+    return () => { window.cancelAnimationFrame(frame); window.removeEventListener('resize', resize); window.removeEventListener('pointermove', move); };
+  }, []);
+  return <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />;
+}
+
 function Home({ lang }) {
-  const t = copy[lang];
-  return <><section className="hero page-wrap"><div className="hero-copy"><Tag color="coral">{t.open}</Tag><h1>{t.greeting}<br /><span>Ouyang <i>👋</i></span></h1><p className="hero-lede">{profile.intro[lang]}</p><div className="hero-actions"><Link className="button primary" to="/contact">{t.chat} <ArrowUpRight size={18} /></Link><Link className="text-link" to="/life">{t.lifeLink} <span>→</span></Link></div><div className="mini-note"><span className="avatar-dot">O</span><span>{t.note}<br /><strong>{t.hello}</strong></span></div></div><div className="hero-visual"><div className="sticker">STAY<br />CURIOUS</div><div className="portrait-card"><div className="portrait-image"><img src="/images/home-photo.jpg" alt={lang === 'zh' ? 'Ouyang Jason 的旅行照片' : 'Ouyang Jason travel photo'} /></div><div className="portrait-caption"><span>today's mood</span><strong>{t.mood}</strong><span className="sun">☀</span></div></div><div className="scribble">✦</div><div className="circle-text">GOOD<br />VIBES<br />ONLY</div></div></section><section className="home-strip page-wrap"><div><span className="eyebrow">{t.aboutEyebrow}</span><h2>{t.aboutTitle}</h2></div><div className="about-copy"><p>{profile.bio[lang]}</p><div className="stat-row"><div><strong>2006</strong><span>{t.born}</span></div><div><strong>{lang === 'zh' ? '10月' : 'October'}</strong><span>{t.month}</span></div><div><strong>∞</strong><span>{t.curiosity}</span></div></div><Link className="text-link" to="/contact">{t.more} <span>→</span></Link></div></section><section className="quote-band"><div className="page-wrap quote-inner"><Sparkles size={28} /><p>{t.quote}</p><span>{t.quoteNote}</span></div></section></>;
+  const h = heroContent[lang];
+  return <div className="resume-home">
+    <section className="resume-hero page-wrap">
+      <ParticleField />
+      <div className="hero-wash" aria-hidden="true"><span className="wash-blue" /><span className="wash-coral" /><span className="wash-yellow" /></div>
+      <div className="hero-grid" aria-hidden="true" />
+      <div className="hero-promo"><Sparkles size={14} /><span>{h.promo}</span><ArrowUpRight size={14} /></div>
+      <div className="hero-frame">
+        <span className="frame-mark frame-tl">+</span><span className="frame-mark frame-tr">+</span><span className="frame-mark frame-bl">+</span><span className="frame-mark frame-br">+</span>
+        <div className="hero-frame-content"><span className="hero-kicker">{h.kicker}</span><h1 className="resume-title">{h.titleA}<br />{h.titleB} <span>{h.titleAccent}</span></h1><div className="hero-status"><span className="status-pulse" aria-hidden="true" />{h.status}</div></div>
+      </div>
+      <div className="resume-intro"><h2>{h.introLead} <span>{profile.name}</span>{lang === 'zh' ? '，' : ', '}{h.introTail}</h2><p>{h.body} <strong><Typewriter key={lang} words={h.keywords} /></strong>{lang === 'zh' ? '。' : '.'}</p></div>
+      <div className="resume-actions"><Link className="hero-button hero-button-dark" to="/work">{h.primary}<ArrowUpRight size={17} /></Link><Link className="hero-button hero-button-light" to="/contact">{h.secondary}</Link></div>
+      <div className="hero-meta"><span>{h.metaOne}</span><span>{h.metaTwo}</span><a href="#resume-snapshot">{h.scroll} ↓</a></div>
+    </section>
+    <section className="resume-snapshot page-wrap" id="resume-snapshot"><div className="snapshot-heading"><span className="eyebrow">{h.snapshotEyebrow}</span><h2>{h.snapshotTitle.split('\n').map((line, index) => <React.Fragment key={line}>{index > 0 && <br />}{line}</React.Fragment>)}</h2><p>{h.snapshotText}</p><Link className="snapshot-link" to="/work">{h.primary} <ArrowUpRight size={15} /></Link></div><div className="snapshot-cards"><article><span>01 / {h.currentLabel}</span><strong>{h.currentValue}</strong><small>{h.currentNote}</small></article><article><span>02 / {h.interestLabel}</span><strong>{h.interestValue}</strong><small>{h.interestNote}</small></article><article><span>03 / {h.nextLabel}</span><strong>{h.nextValue}</strong><small>{h.nextNote}</small></article></div></section>
+    <section className="quote-band"><div className="page-wrap quote-inner"><Sparkles size={28} /><p>{copy[lang].quote}</p><span>{copy[lang].quoteNote}</span></div></section>
+  </div>;
 }
 
 function Work({ lang }) {
