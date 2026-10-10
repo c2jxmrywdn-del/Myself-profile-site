@@ -1,7 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
-import { ValidationError, useForm } from '@formspree/react';
 import { ArrowUpRight, BriefcaseBusiness, Camera, Check, Coffee, Heart, MapPin, Menu, Sparkles, X } from 'lucide-react';
 import './styles.css';
 
@@ -90,6 +89,17 @@ function Layout({ children, lang, setLang }) {
 }
 
 function Tag({ children, color = 'yellow' }) { return <span className={`tag ${color}`}>{children}</span>; }
+
+function Notice({ notice, onClose }) {
+  const item = typeof notice === 'string' ? { text: notice, tone: 'info' } : notice;
+  React.useEffect(() => {
+    if (!item) return undefined;
+    const timer = window.setTimeout(onClose, 5200);
+    return () => window.clearTimeout(timer);
+  }, [notice, onClose]);
+  if (!item) return null;
+  return <div className={`site-notice ${item.tone || 'info'}`} role="status" aria-live="polite"><span className="notice-dot" aria-hidden="true" /><span>{item.text}</span><button type="button" onClick={onClose} aria-label="关闭通知">×</button></div>;
+}
 function PageIntro({ eyebrow, title, text }) { return <section className="page-intro"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{text}</p></section>; }
 
 function Typewriter({ words }) {
@@ -282,8 +292,15 @@ function ParticleField() {
   return <canvas ref={canvasRef} className="particle-field" aria-hidden="true" />;
 }
 
+function usePublicProfile() {
+  const [data, setData] = React.useState(profile);
+  React.useEffect(() => { fetch('/api/profile').then((response) => response.ok ? response.json() : null).then((payload) => payload?.profile && setData(payload.profile)).catch(() => {}); }, []);
+  return data;
+}
+
 function Home({ lang }) {
   const h = heroContent[lang];
+  const publicProfile = usePublicProfile();
   return <div className="resume-home">
     <section className="resume-hero page-wrap">
       <ParticleField />
@@ -294,7 +311,7 @@ function Home({ lang }) {
         <span className="frame-mark frame-tl">+</span><span className="frame-mark frame-tr">+</span><span className="frame-mark frame-bl">+</span><span className="frame-mark frame-br">+</span>
         <div className="hero-frame-content"><span className="hero-kicker">{h.kicker}</span><h1 className="resume-title">{h.titleA}<br />{h.titleB} <span>{h.titleAccent}</span></h1><div className="hero-status"><span className="status-pulse" aria-hidden="true" />{h.status}</div></div>
       </div>
-      <div className="resume-intro"><h2>{h.introLead} <span>{profile.name}</span>{lang === 'zh' ? '，' : ', '}{h.introTail}</h2><p>{h.body} <strong><Typewriter key={lang} words={h.keywords} /></strong>{lang === 'zh' ? '。' : '.'}</p></div>
+      <div className="resume-intro"><h2>{h.introLead} <span>{publicProfile.name}</span>{lang === 'zh' ? '，' : ', '}{h.introTail}</h2><p>{h.body} <strong><Typewriter key={lang} words={h.keywords} /></strong>{lang === 'zh' ? '。' : '.'}</p></div>
       <div className="resume-actions"><Link className="hero-button hero-button-dark" to="/work">{h.primary}<ArrowUpRight size={17} /></Link><Link className="hero-button hero-button-light" to="/contact">{h.secondary}</Link></div>
       <div className="hero-meta"><span>{h.metaOne}</span><span>{h.metaTwo}</span><a href="#resume-snapshot">{h.scroll} ↓</a></div>
     </section>
@@ -309,20 +326,72 @@ function Work({ lang }) {
   return <div className="page-wrap inner-page"><PageIntro eyebrow={t.workEyebrow} title={t.workTitle} text={t.workIntro} /><div className="work-layout"><div className="timeline">{timeline.map((item, i) => <article className="timeline-item" key={item.year}><div className="timeline-dot">{i === 0 ? <BriefcaseBusiness size={15} /> : <span>{i + 1}</span>}</div><div className="timeline-content"><span className="date">{item.year}</span><h2>{item.title}</h2><h3>{item.company}</h3><p>{item.desc}</p><div className="tag-row">{item.tags.map((tag) => <Tag key={tag}>{tag}</Tag>)}</div></div></article>)}</div><aside className="side-card yellow-card"><span className="eyebrow">{t.workStyle}</span><h3>{t.workStyleTitle}</h3><p>{t.workStyleText}</p><div className="check-list">{t.checks.map((item) => <span key={item}><Check size={15} />{item}</span>)}</div></aside></div></div>;
 }
 
+function Guestbook({ lang }) {
+  const labels = lang === 'zh' ? { eyebrow: 'VISITOR NOTES', title: '留一句话，\n让这里更像一个真实的人。', intro: '留言会先进入审核队列，通过后才会出现在公开墙上。', name: '你的名字', email: '邮箱（可选）', message: '想说的话', send: '提交留言', pending: '已收到，审核通过后会显示。', empty: '还没有公开留言，成为第一个留下话的人吧。' } : { eyebrow: 'VISITOR NOTES', title: 'Leave a note,\nmake this space more real.', intro: 'Notes are reviewed before they appear on the public wall.', name: 'Your name', email: 'Email (optional)', message: 'Your note', send: 'Leave a note', pending: 'Received — it will appear after review.', empty: 'No public notes yet. Be the first to leave one.' };
+  const [messages, setMessages] = React.useState([]);
+  const [form, setForm] = React.useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = React.useState('idle');
+  const [notice, setNotice] = React.useState(null);
+  React.useEffect(() => { fetch('/api/guestbook').then((response) => response.json()).then((payload) => setMessages(payload.messages || [])).catch(() => {}); }, []);
+  const submit = async (event) => {
+    event.preventDefault();
+    setStatus('sending');
+    try {
+      const response = await fetch('/api/guestbook', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) });
+      if (!response.ok) throw new Error('guestbook_failed');
+      setForm({ name: '', email: '', message: '' });
+      setStatus('sent');
+      setNotice({ text: labels.pending, tone: 'success' });
+    } catch { setStatus('error'); setNotice({ text: 'Something went wrong. Please try again.', tone: 'error' }); }
+  };
+  return <section className="guestbook-section"><Notice notice={notice} onClose={() => setNotice(null)} /><div className="guestbook-heading"><span className="eyebrow">{labels.eyebrow}</span><h2>{labels.title.split('\n').map((line, index) => <React.Fragment key={line}>{index > 0 && <br />}{line}</React.Fragment>)}</h2><p>{labels.intro}</p></div><div className="guestbook-layout"><form className="guestbook-form" onSubmit={submit}><label>{labels.name}<input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required maxLength="120" /></label><label>{labels.email}<input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} maxLength="254" /></label><label>{labels.message}<textarea value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} required maxLength="1000" rows="4" /></label><button className="button primary" type="submit" disabled={status === 'sending'}>{status === 'sending' ? '…' : labels.send} <ArrowUpRight size={17} /></button>{status === 'sent' && <span className="form-note success-note">{labels.pending}</span>}{status === 'error' && <span className="form-note error-note">Something went wrong. Please try again.</span>}</form><div className="guestbook-list">{messages.length === 0 ? <p className="guestbook-empty">{labels.empty}</p> : messages.map((item) => <article className="guestbook-item" key={item.id}><p>“{item.message}”</p><span>— {item.name}</span></article>)}</div></div></section>;
+}
+
 function Life({ lang }) {
   const t = copy[lang];
-  return <div className="page-wrap inner-page"><PageIntro eyebrow={t.lifeEyebrow} title={t.lifeTitle} text={t.lifeIntro} /><div className="life-grid"><article className="life-card large coral-card"><div className="card-visual camera-visual"><Camera size={42} /><span>{t.travel}</span></div><div className="life-card-copy"><span className="eyebrow">01 / TRAVEL</span><h2>{t.travelTitle}</h2><p>{t.travelText}</p></div></article><article className="life-card green-card"><div className="card-icon"><Coffee size={34} /></div><span className="eyebrow">02 / COFFEE</span><h2>{t.coffee}</h2><p>{t.coffeeText}</p><span className="card-number">07</span></article><article className="life-card blue-card"><div className="card-icon"><Heart size={34} /></div><span className="eyebrow">03 / LITTLE JOYS</span><h2>{t.joys}</h2><div className="joy-tags">{t.joyTags.map((tag) => <Tag color="white" key={tag}>{tag}</Tag>)}</div></article></div></div>;
+  return <div className="page-wrap inner-page"><PageIntro eyebrow={t.lifeEyebrow} title={t.lifeTitle} text={t.lifeIntro} /><div className="life-grid"><article className="life-card large coral-card"><div className="card-visual camera-visual"><Camera size={42} /><span>{t.travel}</span></div><div className="life-card-copy"><span className="eyebrow">01 / TRAVEL</span><h2>{t.travelTitle}</h2><p>{t.travelText}</p></div></article><article className="life-card green-card"><div className="card-icon"><Coffee size={34} /></div><span className="eyebrow">02 / COFFEE</span><h2>{t.coffee}</h2><p>{t.coffeeText}</p><span className="card-number">07</span></article><article className="life-card blue-card"><div className="card-icon"><Heart size={34} /></div><span className="eyebrow">03 / LITTLE JOYS</span><h2>{t.joys}</h2><div className="joy-tags">{t.joyTags.map((tag) => <Tag color="white" key={tag}>{tag}</Tag>)}</div></article></div><Guestbook lang={lang} /></div>;
 }
 
 function Contact({ lang }) {
   const t = copy[lang];
-  const [state, handleSubmit] = useForm('xyezvnag');
-  return <div className="page-wrap inner-page contact-page"><PageIntro eyebrow={t.contactEyebrow} title={t.contactTitle} text={t.contactIntro} /><div className="contact-grid"><div className="contact-card coral-card"><span className="eyebrow">{t.drop}</span><a className="email" href="mailto:hello@example.com">hello@example.com <ArrowUpRight size={24} /></a><p>{t.emailNote}</p><div className="social-links">{socials.map((item) => <a key={item.label} href={item.href} target="_blank" rel="noreferrer">{item.label}</a>)}<a href="weixin://dl/chat?136473333993">微信 · 136473333993</a><a href="https://wpa.qq.com/msgrd?v=3&uin=3514485358&site=qq&menu=yes" target="_blank" rel="noreferrer">QQ · 3514485358</a></div></div><form className="contact-form" onSubmit={handleSubmit} noValidate>{state.succeeded ? <div className="contact-success"><strong>{t.success}</strong><span>{t.successNote}</span></div> : <><label htmlFor="name">{t.name}<input id="name" name="name" required placeholder={t.namePlaceholder} /><ValidationError prefix={t.name} field="name" errors={state.errors} /></label><label htmlFor="email">{t.email}<input id="email" name="email" type="email" required placeholder={t.emailPlaceholder} /><ValidationError prefix={t.email} field="email" errors={state.errors} /></label><label htmlFor="message">{t.message}<textarea id="message" name="message" rows="4" required placeholder={t.messagePlaceholder} /><ValidationError prefix={t.message} field="message" errors={state.errors} /></label><ValidationError prefix={t.send} errors={state.errors} /><button className="button primary" type="submit" disabled={state.submitting}>{state.submitting ? t.sending : <>{t.send} <ArrowUpRight size={18} /></>}</button><span className="form-note">{t.formNote}</span></>}</form></div><div className="location-line"><MapPin size={18} /><span>{t.location}</span><span className="line"></span><span>{t.locationNote}</span></div></div>;
+  const [form, setForm] = React.useState({ name: '', email: '', message: '' });
+  const [status, setStatus] = React.useState('idle');
+  const [notice, setNotice] = React.useState(null);
+  const submit = async (event) => {
+    event.preventDefault();
+    setStatus('sending');
+    try { const response = await fetch('/api/contact', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(form) }); if (!response.ok) throw new Error('contact_failed'); setStatus('sent'); setForm({ name: '', email: '', message: '' }); setNotice({ text: t.successNote, tone: 'success' }); } catch { setStatus('error'); setNotice({ text: '发送失败，请稍后重试。', tone: 'error' }); }
+  };
+  return <div className="page-wrap inner-page contact-page"><PageIntro eyebrow={t.contactEyebrow} title={t.contactTitle} text={t.contactIntro} /><div className="contact-grid"><div className="contact-card coral-card"><span className="eyebrow">{t.drop}</span><a className="email" href="mailto:hello@example.com">hello@example.com <ArrowUpRight size={24} /></a><p>{t.emailNote}</p><div className="social-links">{socials.map((item) => <a key={item.label} href={item.href} target="_blank" rel="noreferrer">{item.label}</a>)}<a href="weixin://dl/chat?136473333993">微信 · 136473333993</a><a href="https://wpa.qq.com/msgrd?v=3&uin=3514485358&site=qq&menu=yes" target="_blank" rel="noreferrer">QQ · 3514485358</a></div></div><form className="contact-form" onSubmit={submit} noValidate><Notice notice={notice} onClose={() => setNotice(null)} />{status === 'sent' ? <div className="contact-success"><strong>{t.success}</strong><span>{t.successNote}</span></div> : <><label htmlFor="name">{t.name}<input id="name" name="name" value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required placeholder={t.namePlaceholder} /></label><label htmlFor="email">{t.email}<input id="email" name="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} type="email" required placeholder={t.emailPlaceholder} /></label><label htmlFor="message">{t.message}<textarea id="message" name="message" value={form.message} onChange={(event) => setForm({ ...form, message: event.target.value })} rows="4" required placeholder={t.messagePlaceholder} /></label>{status === 'error' && <span className="form-note error-note">Something went wrong. Please try again.</span>}<button className="button primary" type="submit" disabled={status === 'sending'}>{status === 'sending' ? t.sending : <>{t.send} <ArrowUpRight size={18} /></>}</button><span className="form-note">消息会保存到网站后台，便于管理员查看和回复。</span></>}</form></div><div className="location-line"><MapPin size={18} /><span>{t.location}</span><span className="line"></span><span>{t.locationNote}</span></div></div>;
+}
+
+function Admin() {
+  const [auth, setAuth] = React.useState({ loading: true, user: null });
+  const [profileJson, setProfileJson] = React.useState('');
+  const [contacts, setContacts] = React.useState([]);
+  const [guestbook, setGuestbook] = React.useState([]);
+  const [notice, setNotice] = React.useState('');
+  const load = React.useCallback(async () => {
+    const me = await fetch('/api/auth/me').then((response) => response.json());
+    setAuth({ loading: false, user: me.user });
+    if (!me.user?.isOwner) return;
+    const [profileResponse, contactsResponse, guestbookResponse] = await Promise.all([fetch('/api/admin/profile'), fetch('/api/admin/contact-messages'), fetch('/api/admin/guestbook')]);
+    const profileData = await profileResponse.json(); const contactData = await contactsResponse.json(); const guestbookData = await guestbookResponse.json();
+    setProfileJson(JSON.stringify(profileData.profile || {}, null, 2)); setContacts(contactData.messages || []); setGuestbook(guestbookData.messages || []);
+  }, []);
+  React.useEffect(() => { load().catch(() => setAuth({ loading: false, user: null })); }, [load]);
+  if (auth.loading) return <div className="page-wrap inner-page admin-page"><p>Loading…</p></div>;
+  if (!auth.user) return <div className="page-wrap inner-page admin-page"><PageIntro eyebrow="PRIVATE AREA" title={<>管理员登录，<span>从这里开始。</span></>} text="使用你的 Manus 账号登录后，才可以管理资料、查看联系消息和审核留言。" /><a className="button primary" href={`/api/auth/login?origin=${encodeURIComponent(window.location.origin)}&returnTo=/admin`}>使用 Manus OAuth 登录 <ArrowUpRight size={18} /></a></div>;
+  if (!auth.user.isOwner) return <div className="page-wrap inner-page admin-page"><PageIntro eyebrow="ACCESS DENIED" title={<>这个空间只属于，<span>项目所有者。</span></>} text="当前账号已登录，但没有管理员权限。" /></div>;
+  const saveProfile = async (event) => { event.preventDefault(); try { const profile = JSON.parse(profileJson); const response = await fetch('/api/admin/profile', { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ profile }) }); if (!response.ok) throw new Error(); setNotice('资料已保存'); } catch { setNotice('资料必须是有效的 JSON'); } };
+  const moderate = async (id, status) => { await fetch(`/api/admin/guestbook/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status }) }); load(); };
+  const markRead = async (id) => { await fetch(`/api/admin/contact-messages/${id}`, { method: 'PATCH', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ status: 'read' }) }); load(); };
+  return <div className="page-wrap inner-page admin-page"><PageIntro eyebrow="OWNER DASHBOARD" title={<>管理资料，<span>保持真实。</span></>} text={`已使用 ${auth.user.email || auth.user.name || '当前 Manus 账号'} 登录。`} /><div className="admin-grid"><form className="admin-card" onSubmit={saveProfile}><span className="eyebrow">PROFILE JSON</span><h2>个人资料</h2><p>修改后会影响公开资料接口；请保留中英文结构。</p><textarea className="admin-editor" value={profileJson} onChange={(event) => setProfileJson(event.target.value)} rows="18" /><button className="button primary" type="submit">保存资料 <ArrowUpRight size={17} /></button>{notice && <span className="form-note success-note">{notice}</span>}</form><section className="admin-card"><span className="eyebrow">CONTACT INBOX</span><h2>联系消息</h2>{contacts.length === 0 ? <p>暂无联系消息。</p> : contacts.map((item) => <article className="admin-item" key={item.id}><strong>{item.name} · {item.email}</strong><p>{item.message}</p><button className="text-button" onClick={() => markRead(item.id)}>{item.status === 'read' ? '已读' : '标记已读'}</button></article>)}</section><section className="admin-card"><span className="eyebrow">GUESTBOOK MODERATION</span><h2>留言审核</h2>{guestbook.length === 0 ? <p>暂无留言。</p> : guestbook.map((item) => <article className="admin-item" key={item.id}><strong>{item.name} · {item.status}</strong><p>{item.message}</p><div><button className="text-button" onClick={() => moderate(item.id, 'approved')}>通过</button><button className="text-button" onClick={() => moderate(item.id, 'rejected')}>拒绝</button></div></article>)}</section></div></div>;
 }
 
 function App() {
   const [lang, setLang] = React.useState('zh');
-  return <Layout lang={lang} setLang={setLang}><Routes><Route path="/" element={<Home lang={lang} />} /><Route path="/work" element={<Work lang={lang} />} /><Route path="/life" element={<Life lang={lang} />} /><Route path="/contact" element={<Contact lang={lang} />} /></Routes></Layout>;
+  return <Layout lang={lang} setLang={setLang}><Routes><Route path="/" element={<Home lang={lang} />} /><Route path="/work" element={<Work lang={lang} />} /><Route path="/life" element={<Life lang={lang} />} /><Route path="/contact" element={<Contact lang={lang} />} /><Route path="/admin" element={<Admin />} /></Routes></Layout>;
 }
 
 createRoot(document.getElementById('root')).render(<BrowserRouter><App /></BrowserRouter>);

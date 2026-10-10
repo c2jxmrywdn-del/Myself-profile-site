@@ -10,3 +10,7 @@
 - [x] 中央标题框区域加入较长的彗星式粒子尾迹，鼠标滑过时尾迹按移动速度拉长。
 - [x] 按用户提供的视频效果将标题框粒子改为 8 股鼠标跟随的粉紫霓虹 Ribbon，包含插值、发光、速度感应和约 1.5 秒衰减。
 - [x] 优化粒子性能：限制 Canvas 分辨率、约 32 FPS、轨迹点、Ribbon 股数、鼠标粒子数量，并合并路径描边。
+- [x] 启用 Server 与 Managed MySQL Database，并初始化 `profile_content`、`contact_messages`、`guestbook_messages` 三张表。
+- [x] 接入 `/api/contact`、`/api/guestbook`、`/api/profile` 和管理员 API，同时保留首页、工作经历、个人生活、联系我页面。
+- [x] 增加 Manus OAuth 管理入口、留言审核、联系消息查看、资料 JSON 编辑和统一站内通知。
+- [ ] 完成管理员 OAuth 实际登录验证后，再由用户单独决定是否保存检查点、推送 GitHub 或发布。
